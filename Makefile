@@ -1,7 +1,7 @@
 
 COMPOSE_FILE	= ./srcs/docker-compose.yml
 
-.PHONY: build up down logs clean
+.PHONY: build up down logs clean re
 
 init-dirs:
 	mkdir -p /home/aduenas-/data/mysql /home/aduenas-/data/wordpress
@@ -14,3 +14,4 @@ down:
 	docker-compose -f $(COMPOSE_FILE) down
 clean:
 	docker-compose -f $(COMPOSE_FILE) down -v --rmi all --remove-orphans
+re: down up

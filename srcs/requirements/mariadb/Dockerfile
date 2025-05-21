@@ -1,14 +1,18 @@
-FROM debian:bullseye-slim
+FROM debian:bullseye
 
-ENV DEBIAN_FRONTEND=nointeractive
+RUN apt-get update && apt-get install -y mariadb-server gettext && apt-get clean
 
-RUN apt-get update && apt-get install -y mariadb-server && rm -rf /var/lib/apt/lists/*
+RUN mkdir -p /var/lib/mysql && mkdir -p /run/mysqld && \
+	chown -R mysql:mysql /var/lib/mysql /run/mysqld
 
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+COPY ./conf/my.cnf /etc/mysql/my.cnf
 
-VOLUME ["/var/lib/mysql"]
+COPY ./init.sql.template /init.sql.template
 
-ENTRYPOINT ["docker-entrypoint.sh"]
+COPY ./docker-entrypoint.sh /docker-entrypoint.sh
 
-CMD ["mysqld", "--user=mysql", "--console"]
+RUN chmod +x /docker-entrypoint.sh
+
+EXPOSE 3306
+
+CMD ["/docker-entrypoint.sh"]

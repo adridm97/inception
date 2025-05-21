@@ -1,51 +1,67 @@
-version: "3.8"
 
 services:
   mariadb:
-    build: ./requirements/mariadb/
+    build: ./requirements/mariadb
     container_name: mariadb
     restart: unless-stopped
     env_file: .env
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD_FILE: /run/secrets/db_wp_password
     secrets:
       - db_root_password
       - db_wp_password
     volumes:
-      - /home/aduenas-/data/mysql:/var/lib/mysql
+      - mariadb_data:/var/lib/mysql
+      - ./requirements/mariadb/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - wp-network
+        
   wordpress:
     build: ./requirements/wordpress
     container_name: wordpress
     restart: unless-stopped
     env_file: .env
+    environment:
+      WORDPRESS_DB_HOST: mariadb:3306
+      WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
+      WORDPRESS_DB_USER: ${MYSQL_USER}
+      WORDPRESS_DB_PASSWORD_FILE: /run/secrets/db_wp_password
     secrets:
       - db_wp_password
     depends_on:
       - mariadb
     volumes:
-      - /home/aduenas-/data/wordpress:/var/www/html
-    expose:
-      - "${WORDPRESS_PHP_FPM_PORT}"
+      - wordpress_data:/var/www/html
     networks:
       - wp-network
+
   nginx:
     build: ./requirements/nginx
     container_name: nginx
     restart: unless-stopped
-    env_file: .env
-    depends_on:
-      - wordpress
     ports:
       - "443:443"
     volumes:
-      - /home/aduenas-/data/wordpress:/var/www/html:ro
-      - ../certs:/etc/nginx/certs:ro
-      - ./requeriments/nginx/conf:/etc/nginx/conf.d:ro
+      - ./requirements/nginx/conf:/etc/nginx/conf.d:rw
+      - ./certs:/etc/nginx/ssl:ro
+      - wordpress_data:/var/www/html:ro
     networks:
       - wp-network
+    depends_on:
+      - wordpress
+
 networks:
   wp-network:
+    name: wp-network
     driver: bridge
+
+volumes:
+  mariadb_data:
+  wordpress_data:
+
 secrets:
   db_root_password:
     file: ../secrets/db_root_password.txt
