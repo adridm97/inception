@@ -1,3 +1,2 @@
 secrets/
-src/.env
-certs/
+srcs/.env
