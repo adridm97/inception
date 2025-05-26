@@ -11,10 +11,16 @@ RUN mkdir -p /etc/nginx/ssl /var/www/html
 
 RUN mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
 
+RUN mkdir -p conf/ssl
+
+RUN openssl req -x509 -nodes -days 365 \
+	-newkey rsa:2048 \
+	-keyout /etc/nginx/ssl/server.key \
+	-out /etc/nginx/ssl/server.crt \
+	-subj "/C=ES/ST=Catalunya/L=Barcelona/O=42Barcelona/OU=Inception/CN=aduenas-.42.fr"
+
 COPY conf/default.conf /etc/nginx/conf.d/default.conf
 COPY conf/default.conf /etc/nginx/sites-available/default
-COPY conf/ssl/server.crt /etc/nginx/ssl/server.crt
-COPY conf/ssl/server.key /etc/nginx/ssl/server.key
 COPY conf/fastcgi-params /etc/nginx/fastcgi-params
 
 RUN mkdir -p /run/nginx
